@@ -1,0 +1,140 @@
+import 'dart:typed_data';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'student_model.dart';
+import 'exam_result_model.dart';
+
+class ReportCardService {
+  
+  /// **رزلٹ کارڈ پی ڈی ایف بنا کر موبائل اسکرین پر پرنٹ پری ویو دکھانا**
+  static Future<void> generateAndPrintReport(StudentModel student, List<ExamResultModel> results, String examType) async {
+    final pdf = pw.Document();
+
+    // کل نمبر اور حاصل کردہ نمبروں کا مجموعہ نکالنا (Calculations math)
+    double totalObtained = 0;
+    double totalMax = 0;
+    
+    for (var res in results) {
+      totalObtained += res.obtainedMarks;
+      totalMax += res.totalMarks;
+    }
+    
+    double percentage = totalMax > 0 ? (totalObtained / totalMax) * 100 : 0.0;
+    String finalStatus = percentage >= 33.0 ? "PASS / پاس" : "FAIL / فیل";
+
+    // پی ڈی ایف کا ڈیزائن تیار کرنا (A4 Page Template Structure)
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return pw.Padding(
+            padding: const pw.EdgeInsets.all(20),
+            child: pw.BorderBox(
+              borderWidth: 2,
+              borderColor: PdfColors.green,
+              child: pw.Padding(
+                padding: const pw.EdgeInsets.all(15),
+                child: pw.Column(
+                  cross pw.CrossAxisAlignment.start,
+                  children: [
+                    // اسکول ہیڈر (Official Header)
+                    pw.Center(
+                      child: pw.Column(
+                        children: [
+                          pw.Text("GOVERNMENT PRIMARY SCHOOL PUNJAB", style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.green)),
+                          pw.Text("STUDENT REPORT CARD / رزلٹ کارڈ", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                          pw.Text("Exam Type: $examType | Academic Year: 2026-2027", style: pw.TextStyle(fontSize: 11)),
+                          pw.SizedBox(height: 15),
+                        ],
+                      ),
+                    ),
+                    pw.Divider(thickness: 1.5, color: PdfColors.grey),
+
+                    // طالب علم کے کوائف (Student Bio Details Grid)
+                    pw.SizedBox(height: 10),
+                    pw.Row(
+                      main pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text("Student Name: ${student.firstName}", style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                        pw.Text("Roll Number: ${student.rollNumber}", style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                      ],
+                    ),
+                    pw.SizedBox(height: 5),
+                    pw.Row(
+                      main pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text("Father Name: ${student.fatherName}", style: pw.TextStyle(fontSize: 12)),
+                        pw.Text("Class: ${student.currentClass} (${student.currentSection})", style: pw.TextStyle(fontSize: 12)),
+                      ],
+                    ),
+                    pw.SizedBox(height: 20),
+
+                    // مضامین کی مارکس ٹیبل (Marks Table Matrix Breakdown)
+                    pw.Text("SUBJECT-WISE PERFORMANCE / تعلیمی کارکردگی:", style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                    pw.SizedBox(height: 8),
+                    pw.Table(
+                      border: pw.TableBorder.all(color: PdfColors.grey, width: 1),
+                      children: [
+                        // ٹیبل ہیڈر
+                        pw.TableRow(
+                          backgroundColor: PdfColors.green50,
+                          children: [
+                            pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text("Subject (مضمون)", style: pw.TextStyle(fontWeight: pw.FontWeight.bold))),
+                            pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text("Total Marks", pw.TextAlign.center, style: pw.TextStyle(pw.FontWeight.bold))),
+                            pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text("Obtained Marks", pw.TextAlign.center, style: pw.TextStyle(pw.FontWeight.bold))),
+                            pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text("Status", pw.TextAlign.center, style: pw.TextStyle(pw.FontWeight.bold))),
+                          ]
+                        ),
+                        // مضامین کا لوپ ریکارڈ
+                        ...results.map((res) {
+                          return pw.TableRow(
+                            children: [
+                              pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(res.subjectName)),
+                              pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(res.totalMarks.toStringAsFixed(0), pw.TextAlign.center)),
+                              pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(res.isAbsent ? "ABSENT" : res.obtainedMarks.toStringAsFixed(0), pw.TextAlign.center)),
+                              pw.Padding(padding: const pw.EdgeInsets.all(6), child: pw.Text(res.isAbsent ? "FAIL" : (res.obtainedMarks >= (res.totalMarks * 0.33) ? "PASS" : "FAIL"), pw.TextAlign.center)),
+                            ]
+                          );
+                        }),
+                      ]
+                    ),
+                    pw.SizedBox(height: 25),
+
+                    // فائنل رزلٹ خلاصہ (Final Total Summary Card)
+                    pw.Divider(),
+                    pw.Row(
+                      main pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text("Total Marks: ${totalMax.toStringAsFixed(0)}", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        pw.Text("Obtained Total: ${totalObtained.toStringAsFixed(0)}", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        pw.Text("Percentage: ${percentage.toStringAsFixed(1)}%", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: percentage >= 33 ? PdfColors.green : PdfColors.red)),
+                      ]
+                    ),
+                    pw.SizedBox(height: 15),
+                    pw.Center(
+                      child: pw.Text("FINAL RESULT STATUS: $finalStatus", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: percentage >= 33 ? PdfColors.green : PdfColors.red)),
+                    ),
+                    
+                    pw.Spacer(),
+                    // دستخط کا ایریا (Signatures Footer)
+                    pw.Row(
+                      main pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Column(children: [pw.SizedBox(width: 100, child: pw.Divider()), pw.Text("Class Teacher Sign", style: const pw.TextStyle(fontSize: 10))]),
+                        pw.Column(children: [pw.SizedBox(width: 100, child: pw.Divider()), pw.Text("Headmaster Stamp", style: const pw.TextStyle(fontSize: 10))]),
+                      ]
+                    )
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    // موبائل کا نیٹو پرنٹ ڈائیلاگ کھولنا جہاں سے PDF ڈاؤن لوڈ یا شیئر ہو سکے گی
+    await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+  }
+}
