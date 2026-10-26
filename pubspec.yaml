@@ -1,0 +1,41 @@
+name: smart_school_management
+description: "A production-grade Smart School Management System for Pakistani Schools."
+publish_to: 'none' # پلے اسٹور پر بھیجنے سے پہلے کوڈ کو پبلک ہونے سے بچانے کے لیے
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  
+  # لوکل آف لائن اسٹوریج کے لیے پاتھ پرووائیڈر
+  path_provider: ^2.1.1
+
+  # یوٹیلٹیز، تاریخ اور یونیک آئی ڈیز جنریٹ کرنے کے لیے
+  intl: any
+  uuid: ^4.3.3
+
+  # اے آئی پیپر جنریٹر موڈیول کے لیے (گوگل جیمنائی اور کیمرہ)
+  google_generative_ai: ^0.4.0
+  image_picker: ^1.1.0
+
+  # رزلٹ کارڈ پرنٹنگ اور پی ڈی ایف انجن کے لیے
+  pdf: ^3.10.8
+  printing: ^5.11.0
+
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  # اردو فونٹ (جمیل نوری نستعلیق) کی کنفیگریشن
+  fonts:
+    - family: JameelNoori
+      fonts:
+        - asset: assets/fonts/JameelNooriNastaleeq.ttf
+        
